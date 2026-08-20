@@ -1,0 +1,74 @@
+<%- include('partials/head', { title: 'Login' }) %>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <img src="https://www.aquamark.io/logo-full-black-blue.png" alt="Aquamark" class="login-logo-img" onerror="this.onerror=null;this.src='https://aquamark.io/logo-full-black-blue.png';" />
+        <p class="login-subtitle">Partner Dashboard</p>
+      </div>
+
+      <% if (error) { %>
+        <div class="alert alert-error"><%= error %></div>
+      <% } %>
+
+      <% if (step === 'code') { %>
+        <!-- Step 2: Enter verification code -->
+        <div class="code-sent-msg">
+          Code sent to <strong><%= email %></strong>
+        </div>
+        <form method="POST" action="/login/verify" class="login-form">
+          <input type="hidden" name="email" value="<%= email %>" />
+          <label for="code" class="form-label">Verification code</label>
+          <input 
+            type="text" 
+            name="code" 
+            id="code" 
+            placeholder="000000" 
+            required 
+            autofocus
+            autocomplete="one-time-code"
+            inputmode="numeric"
+            maxlength="6"
+            class="form-input code-input"
+          />
+          <button type="submit" class="btn btn-primary btn-full">
+            Sign in
+          </button>
+          <p class="login-hint">Check your email for the verification code.</p>
+        </form>
+        <div class="login-back">
+          <a href="/login" class="login-back-link">&larr; Use a different email</a>
+        </div>
+
+      <% } else { %>
+        <!-- Step 1: Enter email -->
+        <form method="POST" action="/login/send" class="login-form" onsubmit="showSending()">
+          <label for="email" class="form-label">Email address</label>
+          <input 
+            type="email" 
+            name="email" 
+            id="email" 
+            placeholder="you@company.com" 
+            required 
+            autofocus
+            class="form-input"
+          />
+          <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+            Send verification code
+          </button>
+          <p class="login-hint">We'll email you a 6-digit code to sign in.</p>
+        </form>
+        <script>
+          function showSending() {
+            var btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Sending code...';
+          }
+        </script>
+      <% } %>
+    </div>
+
+    <p class="login-footer">Powered by Aquamark &middot; aquamark.io</p>
+  </div>
+</body>
+</html>

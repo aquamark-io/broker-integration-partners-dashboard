@@ -1,0 +1,98 @@
+<%- include('partials/head', { title: 'Signing in' }) %>
+<body class="login-body">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <h1>Aquamark</h1>
+      </div>
+
+      <div class="callback-loading" id="loadingState">
+        <div class="spinner-large"></div>
+        <p class="callback-status" id="statusText">Setting up your account...</p>
+        <p class="callback-hint" id="hintText">This may take a moment</p>
+      </div>
+
+      <div class="callback-error" id="errorState" style="display: none;">
+        <div class="alert alert-error" id="errorMessage"></div>
+        <a href="/login" class="btn btn-primary btn-full" style="text-align: center; text-decoration: none;">Back to Login</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const messages = [
+      { text: 'Setting up your account...', hint: 'This may take a moment' },
+      { text: 'Pulling up your account...', hint: 'Almost there' },
+      { text: 'Loading your dashboard...', hint: 'Just a few more seconds' }
+    ];
+
+    let messageIndex = 0;
+    const statusEl = document.getElementById('statusText');
+    const hintEl = document.getElementById('hintText');
+
+    // Cycle through messages every 4 seconds (covers the cold start window)
+    const messageInterval = setInterval(() => {
+      messageIndex++;
+      if (messageIndex < messages.length) {
+        statusEl.textContent = messages[messageIndex].text;
+        hintEl.textContent = messages[messageIndex].hint;
+      }
+    }, 4000);
+
+    function showError(msg) {
+      clearInterval(messageInterval);
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('errorState').style.display = 'block';
+      document.getElementById('errorMessage').textContent = msg;
+    }
+
+    // Check for tokens in URL hash (implicit flow)
+    async function handleCallback() {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const accessToken = params.get('access_token');
+      const refreshToken = params.get('refresh_token');
+
+      if (!accessToken) {
+        // No hash tokens and no code param — invalid link
+        showError('Invalid or expired login link. Please request a new one.');
+        return;
+      }
+
+      try {
+        const res = await fetch('/auth/exchange', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            access_token: accessToken, 
+            refresh_token: refreshToken 
+          })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          // Clear the hash for security
+          window.history.replaceState(null, '', window.location.pathname);
+          window.location.href = '/';
+        } else if (data.error === 'not_authorized') {
+          showError('This email is not authorized for dashboard access.');
+        } else {
+          showError('Login failed. Please try again.');
+        }
+      } catch (err) {
+        showError('Connection error. Please try again.');
+      }
+    }
+
+    handleCallback();
+  </script>
+</body>
+</html>
